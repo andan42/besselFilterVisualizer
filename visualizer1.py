@@ -12,9 +12,9 @@ mpl.rcParams.update({'font.size': 12})
 
 tau_accepted_dev = 0.05
 
-def make_filter(
-    order = 2,
-    f_cutoff = 100,
+def make_filter_bessel(
+    order,
+    f_cutoff,
     normalization = 'delay',
     n_points = 3000):
 
@@ -24,6 +24,18 @@ def make_filter(
     [zeros, poles, gain] =  scipy.signal.bessel(order , w_cutoff, "lowpass", analog=True, output='zpk', norm=normalization)
     [num, den] =            scipy.signal.bessel(order , w_cutoff, "lowpass", analog=True, output='ba', norm=normalization)
     return num, den, zeros, poles, gain
+
+def make_filter_butterworth(
+    order,
+    f_cutoff ,
+    normalization = 'delay',
+    n_points = 3000):
+    
+    w_cutoff = 2 * np.pi * f_cutoff
+    [zeros, poles, gain] =  scipy.signal.butter(order , w_cutoff, "lowpass", analog=True, output='zpk')
+    [num, den] =            scipy.signal.butter(order , w_cutoff, "lowpass", analog=True, output='ba')
+    return num, den, zeros, poles, gain
+    
 
 def get_response(
     num,
@@ -104,20 +116,26 @@ def plot_response(
 
 def main():
     filters = [
-        {'order': 2, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'orange'},
-        {'order': 3, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'blue'},
-        {'order': 4, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'green'},
-        {'order': 5, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'red'},
+        {'type': 'bessel', 'order': 2, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'orange'},
+        {'type': 'bessel', 'order': 5, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'blue'},
+        {'type': 'butterworth', 'order': 2, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'red'},
+        {'type': 'butterworth', 'order': 5, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'green'},
     ]
          
     responses = []
     pole_zeros = []
     
     for m_filt in filters:
-        num, den, zeros, poles, gain = make_filter(
-            order=m_filt['order'], 
-            f_cutoff=m_filt['f_cutoff'], 
-            normalization=m_filt['normalization'])
+        if m_filt['type'] == 'bessel':
+            num, den, zeros, poles, gain = make_filter_bessel(
+                order=m_filt['order'], 
+                f_cutoff=m_filt['f_cutoff'], 
+                normalization=m_filt['normalization'])
+        elif m_filt['type'] == 'butterworth':
+            num, den, zeros, poles, gain = make_filter_butterworth(
+                order=m_filt['order'], 
+                f_cutoff=m_filt['f_cutoff'], 
+                normalization=m_filt['normalization'])
         
         w_cutoff = 2 * np.pi * m_filt['f_cutoff']
         m_color = m_filt['plot_color']
