@@ -56,13 +56,22 @@ def get_response(
     tau = -dphi / dw
     f_tau = (f[:-1] + f[1:]) / 2
     
+    num_d, den_d = scipy.signal.bilinear(num, den, fs=2000)
+    
+    _, tau_d = scipy.signal.group_delay(
+        (num_d, den_d), 
+        w=w_resp / 2 / np.pi, 
+        fs=2000)
+    tau_d = tau_d / 2000
+    
+    #the shit below is a botched fix fo the X axis of the digital tau. we should scale the axis for tau_d but instead were making the analog one wrong to match teh thing
+    f_tau = f_tau
     
     #todo do the stuff below
     # tau_dev = np.abs((tau - tau[0]) / tau[0])
     # idx = np.argmax(tau_dev > tau_accepted_dev)
     # f_flat_end = f_tau[idx] if idx else None
-    return f, mag_db, phase, f_tau, tau
-
+    return f, mag_db, phase, f_tau, tau, tau_d
 def plot_poles_zeros(
     ax : Axes,
     zeros,
@@ -94,13 +103,16 @@ def plot_response(
     phase,
     f_tau,
     tau,
+    tau_d,
     color):
     
     ax[0].semilogx(f, mag_db, color=color) #, label=f'Order {len(tau)}'
 
     ax[1].semilogx(f, phase, color=color)
 
-    ax[2].semilogx(f_tau, tau, label='τg', color=color)
+    ax[2].semilogx(f_tau, tau, label='τg', color=color, ls ='-', lw = 1)
+    
+    ax[2].semilogx(f, tau_d, color=color, ls='--', lw = 3)
     
     
     # ax[2].axhline(tau[0]*(1+tau_accepted_dev), color='grey', ls='--', lw=0.8)
@@ -116,10 +128,12 @@ def plot_response(
 
 def main():
     filters = [
-        {'type': 'bessel', 'order': 2, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'orange'},
-        {'type': 'bessel', 'order': 5, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'blue'},
-        {'type': 'butterworth', 'order': 2, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'red'},
-        {'type': 'butterworth', 'order': 5, 'f_cutoff': 100, 'normalization': 'mag', 'plot_color': 'green'},
+        {'type': 'butterworth', 'order': 4, 'f_cutoff': 1/2*np.pi, 'normalization': 'mag', 'plot_color': 'orange'},
+        {'type': 'bessel', 'order': 4, 'f_cutoff': 1/2*np.pi, 'normalization': 'mag', 'plot_color': 'blue'},
+        
+        #{'type': 'butterworth', 'order': 5, 'f_cutoff': 200, 'normalization': 'mag', 'plot_color': 'blue'},
+        #{'type': 'butterworth', 'order': 5, 'f_cutoff': 300, 'normalization': 'mag', 'plot_color': 'red'},
+        #{'type': 'butterworth', 'order': 5, 'f_cutoff': 400, 'normalization': 'mag', 'plot_color': 'green'},
     ]
          
     responses = []
@@ -139,9 +153,9 @@ def main():
         
         w_cutoff = 2 * np.pi * m_filt['f_cutoff']
         m_color = m_filt['plot_color']
-        f, mag_db, phase, f_tau, tau = get_response(num, den, w_cutoff)
+        f, mag_db, phase, f_tau, tau, tau_d = get_response(num, den, w_cutoff)
 
-        responses.append((f, mag_db, phase, f_tau, tau, m_color))
+        responses.append((f, mag_db, phase, f_tau, tau, tau_d, m_color))
         pole_zeros.append((zeros, poles, m_color))
 
     fig, ax = plt.subplots(3, 1, figsize=(7, 9), sharex=True)
@@ -162,7 +176,7 @@ def main():
     ax2.set_xlabel('Real')
     ax2.set_ylabel('Imaginary')
     ax2.set_title('Poles and Zeros')
-    ax2.grid(True, which='both')
+    ax2.grid(False, which='both')
     
 
     #radius max is max of all poles and zeros magnitude divided by sqrt(2)
@@ -173,20 +187,25 @@ def main():
         if len(poles) > 0:
             max_complex_magnitude = max(max_complex_magnitude, np.abs(poles).max())
     radii = np.linspace(0, 2.0**(0.5) * max_complex_magnitude, 10)
-    
     for r in radii:
         circ = mpatches.Circle((0, 0),    # centre at origin
                             radius=r,
                             fill=False,
                             lw=0.7, color='grey', alpha=0.6)
         ax2.add_patch(circ)
+    angles = np.linspace(0, np.pi, 11)
+    for angle in angles:
+        ax2.plot([0, -np.sin(angle) * 2.0**(0.5) * max_complex_magnitude],
+                 [0, np.cos(angle) * 2.0**(0.5) * max_complex_magnitude],
+                 color='grey', lw=0.7, alpha=0.6)
+
 
     ax2.set_xlim([-1, 0])
     ax2.set_ylim([-1, 1])
     ax2.set_aspect(1, adjustable='box')
     
-    for i, (f, mag_db, phase, f_tau, tau, color) in enumerate(responses):
-        plot_response(ax, f, mag_db, phase, f_tau, tau, color)
+    for i, (f, mag_db, phase, f_tau, tau, tau_d, color) in enumerate(responses):
+        plot_response(ax, f, mag_db, phase, f_tau, tau, tau_d, color)
         
     for i, (num, den, color) in enumerate(pole_zeros):
         plot_poles_zeros(ax2, num, den, color)
