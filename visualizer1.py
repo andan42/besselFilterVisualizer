@@ -60,12 +60,11 @@ def get_response(
     
     _, tau_d = scipy.signal.group_delay(
         (num_d, den_d), 
-        w=w_resp / 2 / np.pi, 
+        w=w_resp / (2 * np.pi), 
         fs=2000)
     tau_d = tau_d / 2000
     
-    #the shit below is a botched fix fo the X axis of the digital tau. we should scale the axis for tau_d but instead were making the analog one wrong to match teh thing
-    f_tau = f_tau
+
     
     #todo do the stuff below
     # tau_dev = np.abs((tau - tau[0]) / tau[0])
