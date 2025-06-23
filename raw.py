@@ -19,6 +19,12 @@ def bessel_coef(k, n):
     else:
         return factorial(2 * n - k) / (2 ** (n - k) * factorial(k) * factorial(n - k))
 
+def gen_butter_poly(n): #made by chatgpt replace this later with manual shit
+    # Get complex conjugate pole pairs on left half-plane unit circle
+    poles = [np.exp((-1j * np.pi * ((k + 1/2) / n + 1/2))) for k in range(n)]
+    poly = np.poly(poles)  # converts roots → poly coefficients
+    return poly.real.tolist()  # Should be real due to symmetry
+
 def gen_poly(poly, n):
     return [poly(k, n) for k in range(n, -1, -1)]
 
@@ -68,17 +74,25 @@ def get_poly_3db(den, recursion_depth=1000, omega_start=0, omega_end=10000):
 
 def get_poly_transfer(den, omega):
     return den[-1] / np.polyval(den, 1j*omega)
-    
-def plot_response(omega, h, ax_mag, ax_phase, label=None):
-    ax_mag.set_title("Bessel Filter Response")
+
+def get_gd_from_transfer(h, omega):
+    return -np.gradient(np.unwrap(np.angle(h))) / np.gradient(omega)
+
+def plot_response(omega, h, gd, ax_mag, ax_phase, ax_gd, label=None):
     ax_mag.semilogx(omega, 20 * np.log10(np.abs(h)), label=label)
     ax_mag.set_ylabel("Magnitude [dB]")
+    ax_mag.set_xlabel("Angular Frequency [rad/s]")
     ax_mag.grid(True)
 
     ax_phase.semilogx(omega, np.unwrap(np.angle(h)), label=label)
     ax_phase.set_ylabel("Phase [rad]")
     ax_phase.set_xlabel("Angular Frequency [rad/s]")
     ax_phase.grid(True)
+    
+    ax_gd.semilogx(omega, get_gd_from_transfer(h, omega), label=label)
+    ax_gd.set_ylabel("Group Delay [s]")
+    ax_gd.set_xlabel("Angular Frequency [rad/s]")
+    ax_gd.grid(True)
     
     #plt.tight_layout()
     #plt.show()
@@ -90,25 +104,35 @@ def main():
     print("")
     n = 5
     omega1 = 2.0
-    omega = np.logspace(-1, 1, 100, base = 10)
+    omega = np.logspace(-1, 2, 100, base = 10)
 
     #generate a polynomial for bessel filter
-    unscaled_poly = gen_poly(bessel_coef, n)
-    print(f"n = {n}, unscaled poly = " + print_poly(unscaled_poly))
+    unscaled_poly_bessel = gen_poly(bessel_coef, n)
+    print(f"n = {n}, unscaled poly = " + print_poly(unscaled_poly_bessel))
+    
     #find its default 3dB frequency
-    unscaled_omega_3db = get_poly_3db(unscaled_poly)
+    unscaled_omega_3db = get_poly_3db(unscaled_poly_bessel)
     print(f"n = {n}, default 3dB frequency = {unscaled_omega_3db:.8f} rad/s")
     
     #normalize to 3dB at 1
-    scaled_poly = set_poly_cutoff(unscaled_poly, unscaled_omega_3db)
-    print(f"n = {n}, scaled poly = " + print_poly(scaled_poly))
+    poly_bessel = set_poly_cutoff(unscaled_poly_bessel, unscaled_omega_3db)
+    print(f"n = {n}, scaled poly = " + print_poly(poly_bessel))
     
-    h0 = get_poly_transfer(unscaled_poly, omega)
-    h1 = get_poly_transfer(scaled_poly, omega)
+    #get a polynomial for butterworth filter
+    poly_butter = gen_butter_poly(n)
     
-    fig, (ax_mag, ax_phase) = plt.subplots(2, 1, figsize=(8, 6))
-    plot_response(omega, h0, ax_mag, ax_phase, label="Unscaled")
-    plot_response(omega, h1, ax_mag, ax_phase, label="Scaled")
+    h0bes = get_poly_transfer(unscaled_poly_bessel, omega)
+    h1bes = get_poly_transfer(poly_bessel, omega)
+    h0but = get_poly_transfer(poly_butter, omega)
+    
+    gd0bes = get_gd_from_transfer(h0bes, omega)
+    gd1bes = get_gd_from_transfer(h1bes, omega)
+    gd0but = get_gd_from_transfer(h0but, omega)
+    
+    fig, (ax_mag, ax_phase, ax_gd) = plt.subplots(3, 1, figsize=(8, 6))
+    plot_response(omega, h0bes, gd0bes, ax_mag, ax_phase, ax_gd, label="Unscaled")
+    plot_response(omega, h1bes, gd1bes, ax_mag, ax_phase, ax_gd, label="Scaled")
+    plot_response(omega, h0but, gd0but, ax_mag, ax_phase, ax_gd, label="Butterworth")
     ax_mag.axhline(-3, color='gray', linestyle='--', linewidth=0.7)
 
     plt.tight_layout()
