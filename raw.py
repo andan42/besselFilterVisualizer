@@ -78,18 +78,19 @@ def get_poly_transfer(den, omega):
 def get_gd_from_transfer(h, omega):
     return -np.gradient(np.unwrap(np.angle(h))) / np.gradient(omega)
 
-def plot_response(omega, h, gd, ax_mag, ax_phase, ax_gd, label=None):
-    ax_mag.semilogx(omega, 20 * np.log10(np.abs(h)), label=label)
+def plot_response(omega, h, gd, ax_mag, ax_phase, ax_gd, label=None, dotted=False):
+    linestyle = '--' if dotted else '-'
+    ax_mag.semilogx(omega, 20 * np.log10(np.abs(h)), label=label, linestyle=linestyle)
     ax_mag.set_ylabel("Magnitude [dB]")
     ax_mag.set_xlabel("Angular Frequency [rad/s]")
     ax_mag.grid(True)
 
-    ax_phase.semilogx(omega, np.unwrap(np.angle(h)), label=label)
+    ax_phase.semilogx(omega, np.unwrap(np.angle(h)), label=label, linestyle=linestyle)
     ax_phase.set_ylabel("Phase [rad]")
     ax_phase.set_xlabel("Angular Frequency [rad/s]")
     ax_phase.grid(True)
     
-    ax_gd.semilogx(omega, get_gd_from_transfer(h, omega), label=label)
+    ax_gd.semilogx(omega, get_gd_from_transfer(h, omega), label=label, linestyle=linestyle)
     ax_gd.set_ylabel("Group Delay [s]")
     ax_gd.set_xlabel("Angular Frequency [rad/s]")
     ax_gd.grid(True)
@@ -102,9 +103,9 @@ def plot_response(omega, h, gd, ax_mag, ax_phase, ax_gd, label=None):
 def main():
     print("")
     print("")
-    n = 5
-    omega1 = 2.0
-    omega = np.logspace(-1, 2, 100, base = 10)
+    n = 7
+    omega1 = 30.0
+    omega = np.logspace(0, 3, 100, base = 10)
 
     #generate a polynomial for bessel filter
     unscaled_poly_bessel = gen_poly(bessel_coef, n)
@@ -121,6 +122,10 @@ def main():
     #get a polynomial for butterworth filter
     poly_butter = gen_butter_poly(n)
     
+    #move the cutoff of both to 10rads
+    poly_bessel = set_poly_cutoff(poly_bessel, 1/omega1)
+    poly_butter = set_poly_cutoff(poly_butter, 1/omega1)
+    
     h0bes = get_poly_transfer(unscaled_poly_bessel, omega)
     h1bes = get_poly_transfer(poly_bessel, omega)
     h0but = get_poly_transfer(poly_butter, omega)
@@ -130,12 +135,13 @@ def main():
     gd0but = get_gd_from_transfer(h0but, omega)
     
     fig, (ax_mag, ax_phase, ax_gd) = plt.subplots(3, 1, figsize=(8, 6))
-    plot_response(omega, h0bes, gd0bes, ax_mag, ax_phase, ax_gd, label="Unscaled")
-    plot_response(omega, h1bes, gd1bes, ax_mag, ax_phase, ax_gd, label="Scaled")
+    plot_response(omega, h0bes, gd0bes, ax_mag, ax_phase, ax_gd, label="Unscaled Bessel", dotted=True)
+    plot_response(omega, h1bes, gd1bes, ax_mag, ax_phase, ax_gd, label="Scaled Bessel")
     plot_response(omega, h0but, gd0but, ax_mag, ax_phase, ax_gd, label="Butterworth")
     ax_mag.axhline(-3, color='gray', linestyle='--', linewidth=0.7)
 
     plt.tight_layout()
+    plt.legend()
     plt.show()
     
     
