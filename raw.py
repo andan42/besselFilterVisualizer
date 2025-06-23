@@ -56,8 +56,6 @@ def get_poly_3db(den, recursion_depth=1000, omega_start=0, omega_end=10000):
     elif idx == 0:
         next_omega_start = omega_start - 1
         next_omega_end = omega_end - 1
-        if next_omega_start <= 0:
-            print("breakpoint")
         return get_poly_3db(den, recursion_depth - 1, next_omega_start - 1, next_omega_end - 1)
     elif idx == len(omega) - 1:
         return get_poly_3db(den, recursion_depth - 1, omega_start + 1, omega_end + 1)
