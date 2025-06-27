@@ -110,8 +110,8 @@ def main():
     capacitor_values = np.sort(np.concatenate([E12_series * d for d in capacitor_decades]))
     
     # Target values for a1 and a0
-    a1_target = 1808.07  # example units: 1/s
-    a0_target = 2745846.14  # example units: 1/s
+    a1_target = 2607.07 #1808.07  # example units: 1/s
+    a0_target = 2158479.56 #2745846.14  # example units: 1/s
     
     # Search for valid MFB designs
     results_df = search_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values, max_results=10)
@@ -119,5 +119,14 @@ def main():
     # Display results
     print("Found MFB designs:")
     print(results_df.to_string(index=False))
+    
+    # Compute A0 and A1 for the result table, as a sanity check
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\nEffective a1, a0, and Gain for each design:")
+    for index, row in results_df.iterrows():
+        a1_eff, a0_eff, G = calculate_a_terms(row['R1'], row['R2'], row['R3'], row['C1'], row['C2'])
+        print(f"Design {index + 1}: a1_eff = {a1_eff:.2f}, a0_eff = {a0_eff:.2f}, Gain = {G:.2f}, Error = {row['Error']:.6f}")
 if __name__ == "__main__":
     main()
