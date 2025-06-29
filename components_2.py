@@ -52,6 +52,30 @@ def solve_r1_r3(C1, C2, R2, a0_target, a1_target):
         return None
 
 def generate_possible_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values):
+    """
+here i will draw the MFB design in schematic form so you know which components are which. annoying cos theres 3 res and 2 caps so yeaaa
+
+                                   R1
+                    ---------------\/\/\-------------
+                    |                               |
+                    |                      C2       |
+                    |               -------||-------|
+                    |               |               |  
+Vin ----\/\/\-------|------\/\/\-------POS          |
+        R3          |      R2          OPAOPA       |
+                    |                  OPAOPAOPA>---------------- Vout
+                    |                  OPAOPA
+                  ===== C1         ----NEG
+                    |              |                              
+                    |              |
+                    =              =
+                
+                
+idfk what else to do to make this clear whatever. 
+input resistor is R3, input capacitor is C1
+output feedback resistor is R1, output capacitor is C2
+negative input reistor is R2
+"""
     results = []
 
     # Iterate over C1, C2, and R2 combinations
