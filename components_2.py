@@ -51,7 +51,7 @@ def solve_r1_r3(C1, C2, R2, a0_target, a1_target):
     except ZeroDivisionError:
         return None
 
-def search_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values, max_results=10):
+def generate_possible_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values):
     results = []
 
     # Iterate over C1, C2, and R2 combinations
@@ -92,9 +92,30 @@ def search_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values, 
                     })
 
     # Sort results by error
-    results_sorted = sorted(results, key=lambda x: x["Error"])[:max_results]
-    return pd.DataFrame(results_sorted)
+    #results_sorted = sorted(results, key=lambda x: x["Error"])[:max_results]
+    return results
+    #return pd.DataFrame(results_sorted)
 
+def sort_and_filter_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values, max_results=10, gain_interval = (None, None)):
+    """
+    Generate and filter MFB designs based on target a1, a0, and gain.
+    Returns a DataFrame of the best designs sorted by error.
+    """
+    results = generate_possible_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values)
+
+    # Convert to DataFrame for easier manipulation
+    df = pd.DataFrame(results)
+
+    # Filter by gain if specified
+    if gain_interval[0] is not None:
+        df = df[df['Gain'] >= gain_interval[0]]
+    if gain_interval[1] is not None:
+        df = df[df['Gain'] <= gain_interval[1]]
+
+    # Sort by error and limit to max_results
+    df = df.sort_values(by='Error').head(max_results)
+
+    return df
 
 def main():
     # Generate E12-based component value lists
@@ -110,11 +131,13 @@ def main():
     capacitor_values = np.sort(np.concatenate([E12_series * d for d in capacitor_decades]))
     
     # Target values for a1 and a0
+    
     a1_target = 2607.07 #1808.07  # example units: 1/s
     a0_target = 2158479.56 #2745846.14  # example units: 1/s
     
     # Search for valid MFB designs
-    results_df = search_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values, max_results=10)
+    # results_df = generate_possible_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values, max_results=10)
+    results_df = sort_and_filter_mfb_designs(a1_target, a0_target, resistor_values, capacitor_values, max_results=10, gain_interval=(None, None))
     
     # Display results
     print("Found MFB designs:")
