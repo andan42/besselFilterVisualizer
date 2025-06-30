@@ -1,0 +1,74 @@
+from components_2 import (
+    get_capacitor_values,
+    get_resistor_values,
+    sort_and_filter_mfb_designs,
+)
+from raw import create_analog_filter, print_poly
+
+
+def main():
+    #use key value
+    filters_to_create = {
+        {
+            "cutoff_hz": 150.0,
+            "filter_order": 5,
+            "filter_type": "bessel",
+            "title": "Bessel 5th Order 150hz",
+        },
+        {
+            "cutoff_hz": 150.0,
+            "filter_order": 5,
+            "filter_type": "butterworth",
+            "title": "Butterworth 5th Order 150hz",
+        },
+    }
+    
+    for filter_params in filters_to_create:
+        do_it_all(
+            cutoff_hz=filter_params["cutoff_hz"],
+            filter_order=filter_params["filter_order"],
+            filter_type=filter_params["filter_type"],
+            title=filter_params["title"]
+        )
+        
+    return
+
+def do_it_all(cutoff_hz, filter_order, filter_type, title):
+    # cutoff_hz = 150.0 #in hz
+    # filter_order = 5
+    # filter_type = "bessel"
+    resistor_values = get_resistor_values([1e3, 1e4, 1e5])  # 1kΩ to 100kΩ
+    capacitor_values = get_capacitor_values([1e-9, 1e-8, 1e-7])  # 1nF to 100nF
+    
+    filter_poly_den_list = create_analog_filter(
+        n_order = filter_order,
+        cutoff_hz = cutoff_hz,
+        filter_type = filter_type,
+        plot_response_flag = False,
+        plot_poles_flag = False,
+        print_polys_flag = True,
+    )
+    
+    for poly_den in filter_poly_den_list:
+        if len(poly_den) != 3:
+            continue
+        a1_target = poly_den[1]
+        a0_target = poly_den[2]
+        df = sort_and_filter_mfb_designs(a1_target, 
+                                    a0_target, 
+                                    resistor_values=resistor_values, 
+                                    capacitor_values=capacitor_values, 
+                                    max_results=5, 
+                                    gain_interval=(None, None))
+        
+        # Print
+        print("Values for poly " + print_poly(poly_den))
+        print()
+        print(df)
+        print()
+
+    
+    return
+
+if __name__ == "__main__":
+    main()

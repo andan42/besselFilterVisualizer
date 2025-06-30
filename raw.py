@@ -151,7 +151,7 @@ def plot_response(omega, h, gd, ax_mag, ax_phase, ax_gd, label=None, dotted=Fals
 
 #function to be called externally.
 #we will use that to generate the polynomial and then chain it with the component finder code
-def create_analog_filter(n_order, cutoff_hz, type='bessel', plot_response_flag=False, plot_poles_flag=False, print_polys_flag=True):
+def create_analog_filter(n_order, cutoff_hz, filter_type='bessel', plot_response_flag=False, plot_poles_flag=False, print_polys_flag=True):
     """
     Create an analog filter polynomial based on the specified type and order.
     
@@ -177,9 +177,9 @@ def create_analog_filter(n_order, cutoff_hz, type='bessel', plot_response_flag=F
         raise ValueError("Filter order must be greater than 0.")
     cutoff_rads = 2 * np.pi * cutoff_hz
     
-    if type == 'bessel':
+    if filter_type == 'bessel':
         poly_unnorm = gen_poly(bessel_coef, n_order)
-    elif type == 'butterworth' or type == 'butter': # 'butter' is a common alias for Butterworth
+    elif filter_type == 'butterworth' or filter_type == 'butter': # 'butter' is a common alias for Butterworth
         poly_unnorm = gen_butter_poly(n_order)
     else:
         raise ValueError("Unsupported filter type. Use 'bessel' or 'butterworth'.")
@@ -200,7 +200,7 @@ def create_analog_filter(n_order, cutoff_hz, type='bessel', plot_response_flag=F
         fig, (ax_mag, ax_phase, ax_gd) = plt.subplots(3, 1, figsize=(8, 6))
         freq = omega / (2 * np.pi)  # Convert rad/s to Hz
         plot_response(freq, h, gd, ax_mag, ax_phase, ax_gd,
-                        label=f"{type.capitalize()} Filter (Order {n_order})")
+                        label=f"{filter_type.capitalize()} Filter (Order {n_order})")
         ax_mag.axhline(-3, color='gray', linestyle='--', linewidth=0.7)
         cutoff_frequency = cutoff_rads / (2 * np.pi)  # Convert rad/s to Hz
         ax_mag.axvline(cutoff_frequency, color='red', linestyle='--', linewidth=0.7, label=f"Cutoff at {cutoff_frequency:.2f} Hz")
@@ -212,10 +212,10 @@ def create_analog_filter(n_order, cutoff_hz, type='bessel', plot_response_flag=F
     if plot_poles_flag:
         # Plot the poles on a complex plane
         plt.figure(figsize=(6, 6))
-        plt.scatter(np.real(poles), np.imag(poles), color='blue', label=f'{type.capitalize()} Poles (Order {n_order})')
+        plt.scatter(np.real(poles), np.imag(poles), color='blue', label=f'{filter_type.capitalize()} Poles (Order {n_order})')
         plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
         plt.axvline(0, color='black', linewidth=0.5, linestyle='--')
-        plt.title(f'{type.capitalize()} Filter Poles (Order {n_order})')
+        plt.title(f'{filter_type.capitalize()} Filter Poles (Order {n_order})')
         plt.xlabel('Real Part')
         plt.ylabel('Imaginary Part')
         plt.grid(True)
@@ -236,7 +236,7 @@ def create_analog_filter(n_order, cutoff_hz, type='bessel', plot_response_flag=F
         
     # Print the polynomials in a readable format
     if print_polys_flag:
-        print(f"\nFilter Type: {type.capitalize()}")
+        print(f"\nFilter Type: {filter_type.capitalize()}")
         print(f"Filter Order: {n_order}")
         print(f"Cutoff Frequency: {cutoff_hz:.2f} Hz")
         #print(f"Cutoff Frequency (rad/s): {cutoff_rads:.2f} rad/s")
@@ -252,8 +252,8 @@ def create_analog_filter(n_order, cutoff_hz, type='bessel', plot_response_flag=F
 # # Main function to demonstrate the Bessel filter design
 def main():
     #test our new functio
-    create_analog_filter(5, 150, type='bessel', plot_response_flag=True, plot_poles_flag=True, print_polys_flag=True)
-    create_analog_filter(5, 150, type='butter', plot_response_flag=True, plot_poles_flag=True, print_polys_flag=True)
+    create_analog_filter(5, 150, filter_type='bessel', plot_response_flag=True, plot_poles_flag=True, print_polys_flag=True)
+    create_analog_filter(5, 150, filter_type='butter', plot_response_flag=True, plot_poles_flag=True, print_polys_flag=True)
     return
     plot_response_flag = True
     if plot_response_flag:

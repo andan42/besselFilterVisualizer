@@ -141,6 +141,24 @@ def sort_and_filter_mfb_designs(a1_target, a0_target, resistor_values, capacitor
 
     return df
 
+def get_resistor_values(decades = [1e3, 1e4, 1e5]):
+    """
+    Generate a list of E12 series resistor values within a specified decade interval.
+    Default is from 1kΩ to 100kΩ.
+    """
+    E12_series = np.array([1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2])
+    return np.sort(np.concatenate([E12_series * d for d in decades]))
+    
+
+def get_capacitor_values(decades = [1e-9, 1e-8, 1e-7]):
+    """
+    Generate a list of E12 series capacitor values within a specified decade interval.
+    Default is from 1nF to 100nF.
+    """
+    E12_series = np.array([1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2])
+    return np.sort(np.concatenate([E12_series * d for d in decades]))
+
+
 def main():
     # Generate E12-based component value lists
     
