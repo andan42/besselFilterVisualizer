@@ -149,7 +149,17 @@ def get_resistor_values(decades = [1e3, 1e4, 1e5]):
     E12_series = np.array([1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2])
     return np.sort(np.concatenate([E12_series * d for d in decades]))
     
-
+def get_my_resistor_box_values():
+    """
+    Hand typed box of actual resistors I have on hand.
+    """
+    return np.array([1.0e1, 2.2e1, 4.7e1,
+                     1.0e2, 1.5e2, 2.0e2, 2.2e2, 2.7e2, 3.3e2, 4.7e2, 5.1e2, 6.8e2,
+                     1.0e3, 2.0e3, 2.2e3, 3.3e3, 4.7e3, 5.1e3, 6.8e3,
+                     1.0e4, 2.0e4, 4.7e4, 5.1e4, 6.8e4,
+                     1.0e5, 2.2e5, 3.3e5, 4.7e5, 6.8e5,
+                     1.0e6 ])
+                     
 def get_capacitor_values(decades = [1e-9, 1e-8, 1e-7]):
     """
     Generate a list of E12 series capacitor values within a specified decade interval.
@@ -158,6 +168,57 @@ def get_capacitor_values(decades = [1e-9, 1e-8, 1e-7]):
     E12_series = np.array([1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2])
     return np.sort(np.concatenate([E12_series * d for d in decades]))
 
+def get_my_capacitor_box_values():
+    """
+    Hand typed box of actual capacitors I have on hand.
+    """
+    return np.array([1.0e-7, 1.5e-7, 2.2e-7, 3.3e-7, 4.7e-7, 6.8e-7,
+                     1.0e-6, 2.2e-6, 4.7e-6, 
+                     1.0e-5])
+    
+def all_pair_sums(available_values : np.ndarray):
+    """
+    Generate all possible sums that can be made by two added values from the available set.
+    """
+    value_pairs = itertools.combinations_with_replacement(available_values, 2)
+    sum_values = [r1 + r2 for r1, r2 in value_pairs]
+    return np.unique(sum_values)
+    
+def all_pair_inversesums(available_values : np.ndarray):
+    """
+    Generate all possible inverse sums that can be made by two added values from the available set.
+    """
+    value_pairs = itertools.combinations_with_replacement(available_values, 2)
+    inversesum_values = [1 / (1/r1 + 1/r2) for r1, r2 in value_pairs]
+    return np.unique(inversesum_values)
+
+def all_pair_series_resistors(available_resistors : np.ndarray):
+    """
+    Generate all possible series combinations of resistors from the available set.
+    """
+    #use the helper
+    return all_pair_sums(available_resistors)
+
+def all_pair_parallel_resistors(available_resistors : np.ndarray):
+    """
+    Generate all possible parallel combinations of resistors from the available set.
+    """
+    #use the helper
+    return all_pair_inversesums(available_resistors)
+
+def all_pair_series_capacitors(available_capacitors : np.ndarray):
+    """
+    Generate all possible series combinations of capacitors from the available set.
+    """
+    #keep in mind correct series formula for capacitors is 1/C = 1/C1 + 1/C2
+    return all_pair_inversesums(available_capacitors)
+
+def all_pair_parallel_capacitors(available_capacitors : np.ndarray):
+    """
+    Generate all possible parallel combinations of capacitors from the available set.
+    """
+    #keep in mind correct parallel formula for capacitors is C = C1 + C2
+    return all_pair_sums(available_capacitors)
 
 def main():
     # Generate E12-based component value lists
